@@ -1,0 +1,48 @@
+---
+- name: Install PostgreSQL
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+  tags:
+    - postgresql
+    - database
+
+- name: Ensure PostgreSQL service is started and enabled
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+  tags:
+    - postgresql
+    - service
+
+- name: Create PostgreSQL application user
+  shell: |
+    sudo -u postgres psql -c "CREATE USER app_user WITH PASSWORD 'app_password123';" 2>/dev/null || true
+  tags:
+    - postgresql
+    - database
+
+- name: Create application database
+  shell: |
+    sudo -u postgres psql -c "CREATE DATABASE nexus_db OWNER app_user;" 2>/dev/null || true
+  tags:
+    - postgresql
+    - database
+
+- name: Grant all privileges
+  shell: |
+    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE nexus_db TO app_user;" 2>/dev/null || true
+  tags:
+    - postgresql
+    - database
+
+- name: Create sample table
+  shell: |
+    sudo -u postgres psql -d nexus_db -c "CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);" 2>/dev/null || true
+  tags:
+    - postgresql
+    - database

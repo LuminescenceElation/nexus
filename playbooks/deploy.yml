@@ -1,0 +1,15 @@
+---
+- name: Nexus - Deploy Multi-Tier Application Stack
+  hosts: web_servers
+  become: yes
+  
+  roles:
+    - common
+    - postgresql
+    - fastapi
+    - nginx
+  
+  post_tasks:
+    - name: Verify deployment
+      debug:
+        msg: "✓ Nexus deployment complete! Services should now be running."

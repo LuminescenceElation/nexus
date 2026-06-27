@@ -1,0 +1,72 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+  tags:
+    - nginx
+    - web
+
+- name: Create Nginx configuration for FastAPI
+  copy:
+    content: |
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          server_name _;
+          location / {
+              proxy_pass http://127.0.0.1:8000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+          }
+          location /api/ {
+              proxy_pass http://127.0.0.1:8000/api/;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+          }
+      }
+    dest: /etc/nginx/sites-available/nexus
+    mode: '0644'
+  notify: Reload Nginx
+  tags:
+    - nginx
+    - config
+
+- name: Enable Nginx site
+  file:
+    src: /etc/nginx/sites-available/nexus
+    dest: /etc/nginx/sites-enabled/nexus
+    state: link
+  notify: Reload Nginx
+  tags:
+    - nginx
+    - config
+
+- name: Remove default Nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx
+  tags:
+    - nginx
+    - config
+
+- name: Test Nginx configuration
+  command: nginx -t
+  changed_when: false
+  tags:
+    - nginx
+    - config
+
+- name: Enable and start Nginx service
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+  tags:
+    - nginx
+    - service
