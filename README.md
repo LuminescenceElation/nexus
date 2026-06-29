@@ -11,21 +11,27 @@ Nexus orchestrates the complete setup of:
 
 All services are configured to auto-start and auto-recover on failure.
 
+## Why Nexus?
+
+This project demonstrates core DevOps practices:
+- **Infrastructure as Code** — Declarative, reproducible deployments
+- **Configuration Management** — Idempotent, version-controlled infrastructure
+- **Service Orchestration** — Multi-tier stack with dependency management
+- **Production Readiness** — Auto-recovery, systemd integration, health checks
+
+It answers the question: *"How do you reliably deploy a full application stack without manual steps?"*
+
 ## Architecture
 
+```
 User (HTTP:80)
-
 ↓
-
 Nginx (Reverse Proxy)
-
 ↓
-
 FastAPI App (127.0.0.1:8000)
-
 ↓
-
 PostgreSQL (nexus_db)
+```
 
 ## Quick Start
 
@@ -68,48 +74,39 @@ Expected response:
 
 ## Project Structure
 
+```
 nexus/
-
 ├── README.md
-
-├── ansible.cfg           # Ansible configuration
-
-├── inventory.ini         # Target hosts
-
+├── ansible.cfg              # Ansible configuration
+├── inventory.ini            # Target hosts
 ├── playbooks/
-
-│   └── deploy.yml        # Main deployment playbook
-
+│   └── deploy.yml           # Main deployment playbook
 ├── roles/
-
 │   ├── common/tasks/main.yml
-
 │   ├── postgresql/tasks/main.yml
-
 │   ├── fastapi/tasks/main.yml
-
 │   └── nginx/tasks/main.yml
-
-└── files/
-
-└── app.py            # FastAPI application
+├── files/
+│   └── app.py               # FastAPI application
+└── app.py                   # FastAPI application
+```
 
 ## Roles Explained
 
-**common** — Updates system packages, sets timezone
+**common** — System-level setup: package updates, timezone configuration, base tools (git, curl, build-essential)
 
-**postgresql** — Installs PostgreSQL, creates database and application user
+**postgresql** — Database layer: installs PostgreSQL, creates application database (`nexus_db`), application user (`app_user`), and schema with `items` table for the API
 
-**fastapi** — Creates venv, installs dependencies, sets up systemd service
+**fastapi** — Application layer: creates isolated Python venv, installs dependencies (FastAPI, Uvicorn, psycopg2), copies application code, creates systemd service for auto-start/auto-recovery
 
-**nginx** — Installs Nginx, configures reverse proxy to FastAPI
+**nginx** — Reverse proxy layer: installs Nginx, configures upstream proxy to FastAPI (port 8000), handles HTTP headers, removes default site
 
 ## Key Features
 
-✅ **Idempotent** — Safe to run multiple times
-✅ **Reproducible** — Same deployment every time
-✅ **Auto-recovery** — Services restart on failure
-✅ **Database integrated** — Full stack working together
+✅ **Idempotent** — Safe to run multiple times  
+✅ **Reproducible** — Same deployment every time  
+✅ **Auto-recovery** — Services restart on failure  
+✅ **Database integrated** — Full stack working together  
 
 ## Technologies
 
@@ -119,6 +116,41 @@ nexus/
 - **Nginx** — High-performance web server
 - **systemd** — Service management
 
+## Interview Talking Points
+
+**Key concepts demonstrated:**
+- Ansible roles for modularity and reusability
+- Idempotent task design (safe to run multiple times)
+- Systemd integration for service management and auto-recovery
+- Reverse proxy configuration (Nginx upstream)
+- Multi-tier architecture: web server → app → database
+- Environment isolation (venv, dedicated app user paths)
+- Declarative vs. imperative infrastructure
+
+**Why this architecture:**
+- Nginx handles HTTP concerns (headers, SSL in production, caching)
+- Separation of concerns keeps each layer focused
+- systemd handles service lifecycle (start on boot, restart on crash)
+- Virtual environment isolates app dependencies from system Python
+- PostgreSQL as separate tier allows independent scaling
+
+**What I'd improve in production:**
+- Dedicated service user (not root) for FastAPI
+- SSL/TLS termination in Nginx
+- Environment variables for database credentials (not hardcoded)
+- Separate database host (not localhost)
+- Health checks and monitoring (Prometheus/Grafana)
+- Logging aggregation (ELK stack or cloud provider logs)
+- Load balancing for high availability
+- Database backups and recovery strategy
+
+**What this taught me:**
+- Ansible's idempotency principle (tasks are safe to repeat)
+- The importance of service dependencies and ordering
+- How reverse proxies abstract application details
+- Systemd as the modern init system
+- Testing infrastructure code before production use
+
 ## Author
 
-Leo Patsalides | [GitHub](https://github.com/LuminescenceElation)
+Leonidas John Patsalides
