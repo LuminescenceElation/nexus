@@ -1,0 +1,75 @@
+---
+- name: Create application directory
+  file:
+    path: /opt/nexus-app
+    state: directory
+    mode: '0755'
+  tags:
+    - fastapi
+    - app
+
+- name: Install Python venv
+  apt:
+    name: python3-venv
+    state: present
+  tags:
+    - fastapi
+    - python
+
+- name: Create Python virtual environment
+  shell: python3 -m venv /opt/nexus-app/venv
+  args:
+    creates: /opt/nexus-app/venv/bin/python
+  tags:
+    - fastapi
+    - python
+
+- name: Install FastAPI dependencies
+  shell: /opt/nexus-app/venv/bin/pip install fastapi uvicorn psycopg2-binary
+  tags:
+    - fastapi
+    - python
+
+- name: Copy FastAPI application
+  copy:
+    src: ../files/app.py
+    dest: /opt/nexus-app/app.py
+    mode: '0644'
+  tags:
+    - fastapi
+    - app
+
+- name: Create systemd service for FastAPI
+  copy:
+    content: |
+      [Unit]
+      Description=FastAPI Application
+      After=network.target postgresql.service
+
+      [Service]
+      Type=simple
+      User=root
+      WorkingDirectory=/opt/nexus-app
+      Environment="PATH=/opt/nexus-app/venv/bin"
+      ExecStart=/opt/nexus-app/venv/bin/python app.py
+      Restart=on-failure
+      RestartSec=5s
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/fastapi.service
+    mode: '0644'
+  notify: reload systemd
+  tags:
+    - fastapi
+    - service
+
+- name: Start and enable FastAPI service
+  systemd:
+    name: fastapi
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - fastapi
+    - service
