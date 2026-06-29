@@ -1,0 +1,27 @@
+---
+- name: Update apt packages
+  apt:
+    update_cache: yes
+  tags:
+    - common
+    - system
+
+- name: Install base packages
+  apt:
+    name:
+      - git
+      - curl
+      - wget
+      - build-essential
+      - python3-dev
+    state: present
+  tags:
+    - common
+    - packages
+
+- name: Set timezone to UTC
+  timezone:
+    name: UTC
+  tags:
+    - common
+    - timezone
